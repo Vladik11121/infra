@@ -1,0 +1,39 @@
+packer {
+  required_plugins {
+    yandex = {
+      version = ">= 1.1.5"
+      source  = "github.com/yandex-cloud/yandex"
+    }
+  }
+}
+
+variable "folder_id" {
+  type    = string
+  default = "b1ga8kilo5nklegmh627"
+}
+
+source "yandex" "ubuntu16" {
+  service_account_key_file = "packer-key.json"
+  folder_id               = var.folder_id
+  source_image_family     = "ubuntu-1604-lts"
+  image_name              = "reddit-base-{{timestamp}}"
+  image_family            = "reddit-base"
+  ssh_username            = "ubuntu"
+  platform_id             = "standard-v1"
+  use_ipv4_nat            = true
+  disk_type               = "network-ssd"
+  zone                    = "ru-central1-a"
+}
+
+build {
+  sources = ["source.yandex.ubuntu16"]
+
+  provisioner "shell" {
+    script = "scripts/install_ruby.sh"
+  }
+
+  provisioner "shell" {
+    script           = "scripts/install_mongodb.sh"
+    execute_command  = "sudo {{.Path}}"
+  }
+}
